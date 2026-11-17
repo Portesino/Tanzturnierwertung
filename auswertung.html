@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172720">
+  <title>Turnierwertung – Auswertung</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172720;
+      --muted: #748078;
+      --paper: #f5f4ef;
+      --surface: #fffefa;
+      --line: #e8e8df;
+      --green: #2a694b;
+      --green-dark: #1d5038;
+      --mint: #e5efe7;
+      --shadow: 0 16px 40px rgb(23 39 32 / 7%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); min-width: 320px; }
+    button, a { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { background: var(--ink); color: #fffefa; }
+    .topbar-inner, main { width: min(1120px, calc(100% - 64px)); margin: 0 auto; }
+    .topbar-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 13px; font-size: 15px; font-weight: 750; letter-spacing: -.02em; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; color: var(--ink); background: #e8a34d; font-size: 18px; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 9px; padding: 10px 14px; background: var(--green); color: white; text-decoration: none; font-weight: 700; font-size: 13px; transition: background .16s, transform .16s; }
+    .button:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .button.secondary { background: #fffefa; color: var(--ink); border: 1px solid var(--line); }
+    .button.secondary:hover { background: #f7f8f3; }
+    main { padding: 38px 0 60px; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 27px; }
+    .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .13em; font-weight: 800; font-size: 10px; margin: 0 0 9px; }
+    h1 { font-size: clamp(29px, 3.2vw, 42px); letter-spacing: -.045em; line-height: 1.05; margin: 0; }
+    .subtitle { color: var(--muted); font-size: 14px; margin: 11px 0 0; }
+    .event-name { color: var(--muted); font-size: 13px; font-weight: 650; }
+    .notice { margin: 0 0 20px; padding: 13px 15px; border: 1px solid #e6e8df; border-radius: 10px; background: #f9faf6; color: #68746b; font-size: 12px; line-height: 1.5; }
+    .category { margin: 0 0 18px; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow); }
+    .category-head { padding: 17px 20px; border-bottom: 1px solid var(--line); }
+    .category-head h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+    .category-head p { margin: 5px 0 0; color: var(--muted); font-size: 11px; }
+    .round { padding: 15px 20px 17px; }
+    .round + .round { border-top: 1px solid var(--line); }
+    .round h3 { margin: 0 0 10px; color: var(--muted); font-size: 11px; font-weight: 750; }
+    .place-list { display: grid; gap: 7px; }
+    .place { display: grid; grid-template-columns: 39px minmax(0, 1fr) minmax(90px, auto); align-items: center; gap: 12px; min-height: 50px; padding: 7px 10px; border-radius: 9px; background: #fafbf7; }
+    .rank { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; background: #f0f1eb; font-size: 12px; font-weight: 800; }
+    .rank.first { background: #f9edda; color: #93651d; }
+    .rank.second { background: #e9ecea; color: #55635b; }
+    .rank.third { background: #f4e5da; color: #8b6446; }
+    .person { min-width: 0; }
+    .person-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 750; }
+    .person-detail { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .result { text-align: right; white-space: nowrap; font-size: 13px; font-weight: 800; color: var(--green-dark); }
+    .empty { padding: 60px 20px; text-align: center; color: var(--muted); border: 1px dashed #d7dbd2; border-radius: 14px; background: rgb(255 254 250 / 65%); }
+    .empty strong { display: block; margin-bottom: 6px; color: var(--ink); font-size: 15px; }
+    .empty p { margin: 0; font-size: 12px; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; padding: 11px 16px; border-radius: 9px; background: var(--ink); color: white; font-size: 12px; box-shadow: var(--shadow); transition: .2s; z-index: 5; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    @media (max-width: 650px) {
+      .topbar-inner, main { width: calc(100% - 28px); }
+      .topbar-inner { min-height: 64px; }
+      .brand { font-size: 13px; }
+      .brand-mark { width: 32px; height: 32px; }
+      .top-actions { gap: 6px; }
+      .button { padding: 8px 9px; font-size: 11px; }
+      main { padding-top: 27px; }
+      .intro { align-items: start; flex-direction: column; }
+      .category-head, .round { padding-left: 13px; padding-right: 13px; }
+      .place { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 7px; padding: 7px; }
+      .person-name { font-size: 12px; }
+      .result { font-size: 12px; }
+    }
+    @media print {
+      body { background: white; }
+      .topbar, .notice, .toast { display: none !important; }
+      main { width: 100%; padding: 0; }
+      .intro { margin-bottom: 16px; }
+      .category { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✳</span><span>TURNIERWERTUNG <span style="font-weight:450;color:#b8c5bb">/ Auswertung</span></span></div>
+      <div class="top-actions">
+        <a class="button secondary" href="index.html">←&nbsp; Zum Rechner</a>
+        <button class="button" id="exportResultsButton" type="button">↓&nbsp; Auswertung exportieren</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">Turnierergebnisse</p>
+        <h1>Plätze 1 bis 3.</h1>
+        <p class="subtitle">Die besten Platzierungen je Altersklasse und Sparte.</p>
+      </div>
+      <div class="event-name" id="eventName"></div>
+    </section>
+    <p class="notice">Bei gleicher Platzierung werden alle Starter angezeigt. Wie im Rechner werden nur Starter mit derselben Anzahl erfasster Wertungen miteinander verglichen. Unvollständige Wertungen sind Zwischenstände.</p>
+    <div id="results"></div>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "turnierwertungsrechner-v1";
+      const resultsElement = document.getElementById("results");
+      let state = { event: "", entries: [] };
+      let toastTimer;
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[char]);
+      }
+
+      function getResult(entry) {
+        if (entry.withdrawn) return { score: null, tieBreakScore: null, count: 0, complete: false };
+        const scores = entry.scores.filter((score) => score !== null);
+        if (!scores.length) return { score: null, tieBreakScore: null, count: 0, complete: false };
+        const sorted = [...scores].sort((a, b) => a - b);
+        const score = scores.length >= 3
+          ? scores.reduce((sum, value) => sum + value, 0) - sorted[0] - sorted[sorted.length - 1]
+          : scores.reduce((sum, value) => sum + value, 0);
+        return {
+          score,
+          tieBreakScore: scores.length >= 3 ? sorted[sorted.length - 1] : null,
+          count: scores.length,
+          complete: scores.length === 7
+        };
+      }
+
+      function getRankedGroups() {
+        const groups = new Map();
+        for (const entry of state.entries) {
+          const result = getResult(entry);
+          if (result.score === null) continue;
+          const key = `${entry.age.toLocaleLowerCase()}\u0000${entry.division.toLocaleLowerCase()}\u0000${result.count}`;
+          if (!groups.has(key)) groups.set(key, { age: entry.age, division: entry.division, count: result.count, entries: [] });
+          groups.get(key).entries.push({ entry, result });
+        }
+
+        const categories = new Map();
+        for (const group of groups.values()) {
+          group.entries.sort((a, b) =>
+            b.result.score - a.result.score ||
+            (b.result.tieBreakScore ?? -Infinity) - (a.result.tieBreakScore ?? -Infinity) ||
+            a.entry.name.localeCompare(b.entry.name, "de"));
+          let previous = null;
+          let rank = 0;
+          group.entries.forEach((item, index) => {
+            if (!previous || item.result.score !== previous.score ||
+                item.result.tieBreakScore !== previous.tieBreakScore) {
+              rank = index + 1;
+            }
+            item.rank = rank;
+            previous = item.result;
+          });
+          const categoryKey = `${group.age.toLocaleLowerCase()}\u0000${group.division.toLocaleLowerCase()}`;
+          if (!categories.has(categoryKey)) categories.set(categoryKey, { age: group.age, division: group.division, groups: [] });
+          categories.get(categoryKey).groups.push(group);
+        }
+        return [...categories.values()].sort((a, b) =>
+          a.age.localeCompare(b.age, "de") || a.division.localeCompare(b.division, "de"));
+      }
+
+      function formatScore(value) {
+        return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(".", ",");
+      }
+
+      function render() {
+        document.getElementById("eventName").textContent = state.event;
+        const categories = getRankedGroups();
+        const hasPlacements = categories.some((category) =>
+          category.groups.some((group) => group.entries.some((item) => item.rank <= 3)));
+        if (!hasPlacements) {
+          resultsElement.innerHTML = '<div class="empty"><strong>Noch keine Platzierungen vorhanden</strong><p>Trage im Rechner Wertungen ein, um die Auswertung zu sehen.</p></div>';
+          return;
+        }
+        resultsElement.innerHTML = categories.map((category) => {
+          const groups = category.groups.filter((group) => group.entries.some((item) => item.rank <= 3));
+          if (!groups.length) return "";
+          return `<section class="category">
+            <header class="category-head"><h2>${escapeHtml(category.age)} · ${escapeHtml(category.division)}</h2></header>
+            ${groups.map((group) => `<div class="round">
+              <h3>${group.count === 7 ? "Endwertung" : "Zwischenstand"} · ${group.count} von 7 Wertungen</h3>
+              <div class="place-list">${group.entries.filter((item) => item.rank <= 3).map(({ entry, result, rank }) => `
+                <article class="place">
+                  <span class="rank ${rank === 1 ? "first" : rank === 2 ? "second" : rank === 3 ? "third" : ""}">${rank}.</span>
+                  <div class="person"><div class="person-name">${escapeHtml(entry.name)}</div><div class="person-detail">${escapeHtml(entry.club || "Kein Verein")}</div></div>
+                  <div class="result">${formatScore(result.score)} Punkte</div>
+                </article>`).join("")}</div>
+            </div>`).join("")}
+          </section>`;
+        }).join("");
+      }
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) {
+            state = { event: "", entries: [] };
+          } else {
+            const parsed = JSON.parse(saved);
+            if (!parsed || !Array.isArray(parsed.entries)) throw new Error("Ungültige gespeicherte Turnierdaten.");
+            state = {
+              event: typeof parsed.event === "string" ? parsed.event : "",
+              entries: parsed.entries.map((entry) => ({
+                id: String(entry.id || ""),
+                name: String(entry.name || ""),
+                club: String(entry.club || ""),
+                age: String(entry.age || ""),
+                division: String(entry.division || ""),
+                scores: Array.isArray(entry.scores) ? Array.from({ length: 7 }, (_, index) => {
+                  const rawScore = entry.scores[index];
+                  if (rawScore === null || rawScore === undefined || rawScore === "") return null;
+                  const score = Number(rawScore);
+                  return Number.isInteger(score) && score >= 0 && score <= 100 ? score : null;
+                }) : Array(7).fill(null),
+                withdrawn: entry.withdrawn === true
+              }))
+            };
+          }
+          render();
+        } catch (error) {
+          console.error("Turnierdaten konnten nicht geladen werden:", error);
+          resultsElement.innerHTML = '<div class="empty"><strong>Turnierdaten konnten nicht geladen werden</strong><p>Bitte öffne den Rechner und prüfe die gespeicherten Daten.</p></div>';
+        }
+      }
+
+      function toCsvCell(value) {
+        return `"${String(value ?? "").replaceAll('"', '""')}"`;
+      }
+
+      function exportCsv() {
+        const categories = getRankedGroups();
+        const rows = categories.flatMap((category) => category.groups.flatMap((group) =>
+          group.entries.filter((item) => item.rank <= 3).map(({ entry, result, rank }) => [
+            state.event, category.age, category.division, group.count === 7 ? "Endwertung" : "Zwischenstand",
+            group.count, rank, entry.name, entry.club, result.score
+          ])));
+        if (!rows.length) {
+          showToast("Es sind noch keine Platzierungen zum Exportieren vorhanden.");
+          return;
+        }
+        const headers = ["Veranstaltung", "Altersklasse", "Sparte", "Wertungsstand", "Wertungen erfasst", "Platz", "Name", "Verein", "Punkte"];
+        const csv = [headers, ...rows].map((row) => row.map(toCsvCell).join(";")).join("\r\n");
+        const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${(state.event || "turnierauswertung").replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "turnierauswertung"}-auswertung.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+      }
+
+      document.getElementById("exportResultsButton").addEventListener("click", exportCsv);
+      window.addEventListener("storage", (event) => {
+        if (event.key === STORAGE_KEY) loadState();
+      });
+      loadState();
+    })();
+  </script>
+</body>
+</html>

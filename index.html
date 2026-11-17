@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172720">
+  <title>Turnierwertung – Wertungsrechner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172720;
+      --muted: #748078;
+      --paper: #f5f4ef;
+      --surface: #fffefa;
+      --line: #e8e8df;
+      --green: #2a694b;
+      --green-dark: #1d5038;
+      --mint: #e5efe7;
+      --orange: #e8a34d;
+      --red: #bd6154;
+      --shadow: 0 16px 40px rgb(23 39 32 / 7%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); min-width: 320px; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { background: var(--ink); color: #fffefa; }
+    .topbar-inner, main { width: min(1540px, calc(100% - 64px)); margin: 0 auto; }
+    .topbar-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 13px; font-size: 15px; font-weight: 750; letter-spacing: -.02em; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 12px; color: var(--ink); background: var(--orange); font-size: 18px; }
+    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .file-input-hidden { display: none; }
+    .save-state { display: inline-flex; align-items: center; gap: 7px; color: #c3d1c7; font-size: 12px; margin-right: 7px; }
+    .save-dot { width: 7px; height: 7px; border-radius: 50%; background: #8dcea1; }
+    .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 9px; padding: 10px 14px; background: var(--green); color: white; font-weight: 700; font-size: 13px; transition: background .16s, transform .16s; }
+    .button:hover { background: var(--green-dark); transform: translateY(-1px); }
+    .button.secondary { background: #fffefa; color: var(--ink); border: 1px solid var(--line); }
+    .button.secondary:hover { background: #f7f8f3; }
+    .button.danger { color: #a44c41; }
+    .button.danger:hover { background: #fcf1ee; border-color: #e8c8c2; }
+    .button.dark-secondary { background: #2a3931; color: #fffefa; border: 1px solid #425047; }
+    .button.dark-secondary:hover { background: #35473c; }
+    .button.small { padding: 8px 11px; font-size: 12px; }
+    .button.icon-only { padding: 8px; width: 34px; height: 34px; }
+    main { padding: 38px 0 60px; }
+    .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .13em; font-weight: 800; font-size: 10px; margin: 0 0 9px; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 27px; }
+    h1 { font-size: clamp(29px, 3.2vw, 42px); letter-spacing: -.045em; line-height: 1.05; margin: 0; }
+    .subtitle { color: var(--muted); font-size: 14px; margin: 11px 0 0; }
+    .stats-controls { display: flex; justify-content: flex-end; margin: -12px 0 10px; }
+    .event-field { width: 255px; }
+    .event-field label, .field label { display: block; color: var(--muted); font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+    .event-field input, .field input, .field select, .filter-select, .search-input { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); outline: none; }
+    .event-field input { padding: 10px 12px; font-size: 13px; font-weight: 650; }
+    input:focus, select:focus { border-color: #81a78b !important; box-shadow: 0 0 0 3px rgb(42 105 75 / 10%); }
+    .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stats[hidden] { display: none; }
+    .stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; min-height: 105px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 3px 12px rgb(23 39 32 / 2%); }
+    .stat-label { color: var(--muted); font-weight: 650; font-size: 12px; margin-bottom: 9px; }
+    .stat-value { font-size: 27px; letter-spacing: -.04em; font-weight: 760; }
+    .stat-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--mint); display: grid; place-items: center; color: var(--green); font-size: 17px; }
+    .workspace { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+    .toolbar { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); }
+    .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 9px; }
+    .filter-select, .search-input { height: 38px; padding: 0 11px; font-size: 12px; }
+    .filter-select { width: 155px; }
+    .search-wrap { position: relative; width: 210px; }
+    .search-wrap::before { content: "⌕"; color: #8b948e; position: absolute; left: 11px; top: 5px; font-size: 21px; line-height: 1; pointer-events: none; }
+    .search-input { padding-left: 32px; }
+    .table-wrap { overflow: auto; max-height: min(64vh, 690px); }
+    table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 1370px; font-size: 12px; }
+    th { position: sticky; top: 0; z-index: 3; background: #f7f8f3; color: #707b73; text-transform: uppercase; letter-spacing: .06em; font-size: 9px; font-weight: 800; height: 41px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th, td { padding: 7px 8px; text-align: left; }
+    td { border-bottom: 1px solid #eff0e9; height: 51px; }
+    tbody tr:hover { background: #fafbf7; }
+    .pin { position: sticky; z-index: 2; background: var(--surface); }
+    th.pin { z-index: 4; background: #f7f8f3; }
+    tbody tr:hover .pin { background: #fafbf7; }
+    .pin-one { left: 0; }
+    .pin-two { left: 45px; }
+    .col-rank { width: 45px; min-width: 45px; text-align: center; }
+    .col-person { min-width: 150px; }
+    .col-club { min-width: 175px; }
+    .col-category { min-width: 107px; }
+    .col-start { min-width: 85px; }
+    .score-head, .score-cell { width: 55px; min-width: 55px; text-align: center; }
+    .result-head, .result-cell { min-width: 75px; text-align: center; }
+    .result-head { color: var(--green); }
+    .result-cell { color: var(--green-dark); font-weight: 800; background: #f2f7f1; }
+    .result-cell.provisional { color: #875b1c; background: #fbf3e5; }
+    .result-cell.muted { color: #a3aca4; font-weight: 550; background: #fafbf8; }
+    .rank-pill { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: #f0f1eb; font-size: 11px; font-weight: 800; }
+    .rank-pill.first { background: #f9edda; color: #93651d; }
+    .rank-pill.second { background: #e9ecea; color: #55635b; }
+    .rank-pill.third { background: #f4e5da; color: #8b6446; }
+    .rank-pill.withdrawn { background: #f4e9e7; color: var(--red); }
+    .person-name { font-weight: 750; font-size: 12px; }
+    .person-detail { color: var(--muted); font-size: 10px; margin-top: 3px; white-space: nowrap; max-width: 190px; overflow: hidden; text-overflow: ellipsis; }
+    tr.is-withdrawn td:not(.pin) { color: #929a93; }
+    tr.is-withdrawn .person-name { color: #838b85; text-decoration: line-through; text-decoration-color: #c6aaa4; }
+    tr.is-withdrawn .pin { background: #f8f6f2; }
+    tr.is-withdrawn:hover .pin { background: #f3f1ec; }
+    .withdrawn-label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 10px; color: #8f544b; font-weight: 700; }
+    .withdrawn-label input { accent-color: var(--red); margin: 0; }
+    .number-input { width: 42px; height: 30px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: var(--ink); text-align: center; font-size: 12px; font-variant-numeric: tabular-nums; outline: none; }
+    .number-input:hover { background: #f4f6f1; border-color: var(--line); }
+    .number-input:focus { background: white; }
+    .start-input { width: 48px; }
+    .remove-row { opacity: 0; color: #a1a9a2; background: transparent; border: 0; font-size: 17px; }
+    .row-actions { display: flex; align-items: center; gap: 3px; }
+    .edit-row, .remove-row { color: #77827a; background: transparent; border: 0; border-radius: 5px; width: 28px; height: 28px; font-size: 14px; }
+    .edit-row { opacity: 1; }
+    .remove-row { opacity: 0; }
+    .edit-row:hover { background: var(--mint); color: var(--green-dark); }
+    .remove-row { color: #a1a9a2; font-size: 17px; }
+    tr:hover .remove-row, .remove-row:focus { opacity: 1; }
+    .empty { padding: 74px 20px; text-align: center; color: var(--muted); }
+    .empty-mark { background: var(--mint); color: var(--green); width: 48px; height: 48px; margin: auto auto 14px; display: grid; place-items: center; border-radius: 15px; font-size: 22px; }
+    .empty strong { color: var(--ink); display: block; font-size: 15px; margin-bottom: 6px; }
+    .empty p { margin: 0 0 18px; font-size: 12px; }
+    .table-footer { min-height: 48px; padding: 10px 20px; color: var(--muted); font-size: 11px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .legend { display: flex; align-items: center; gap: 7px; }
+    .legend-mark { width: 9px; height: 9px; border-radius: 3px; background: #dcebdc; }
+    .method-note { color: var(--muted); font-size: 11px; margin: 14px 2px 0; }
+    dialog { width: min(520px, calc(100% - 28px)); border: 0; padding: 0; border-radius: 16px; box-shadow: 0 24px 80px rgb(10 20 14 / 30%); color: var(--ink); }
+    dialog::backdrop { background: rgb(17 28 22 / 55%); backdrop-filter: blur(2px); }
+    .dialog-head { padding: 22px 24px 14px; display: flex; justify-content: space-between; align-items: start; }
+    .dialog-head h2 { font-size: 21px; letter-spacing: -.03em; margin: 0; }
+    .dialog-head p { color: var(--muted); font-size: 12px; margin: 6px 0 0; }
+    .close-button { border: 0; background: transparent; color: var(--muted); font-size: 22px; }
+    .form-grid { padding: 7px 24px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field input, .field select { padding: 10px 11px; height: 41px; font-size: 13px; }
+    .field.full { grid-column: 1 / -1; }
+    .dialog-footer { border-top: 1px solid var(--line); padding: 15px 24px; display: flex; justify-content: flex-end; gap: 9px; }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; padding: 11px 16px; border-radius: 9px; background: var(--ink); color: white; font-size: 12px; box-shadow: var(--shadow); transition: .2s; z-index: 5; }
+    .toast.show { transform: translate(-50%, 0); opacity: 1; }
+    @media (max-width: 850px) {
+      .topbar-inner, main { width: min(100% - 32px, 1540px); }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .toolbar { align-items: stretch; flex-direction: column; }
+      .toolbar-left, .toolbar-right { flex-wrap: wrap; }
+      .search-wrap { flex: 1; min-width: 160px; }
+      .intro { align-items: start; flex-direction: column; }
+      .event-field { width: min(100%, 300px); }
+    }
+    @media (max-width: 520px) {
+      .topbar-inner, main { width: calc(100% - 24px); }
+      .topbar-inner { min-height: 64px; }
+      .top-actions { gap: 6px; }
+      .brand { font-size: 13px; }
+      .brand-mark { width: 32px; height: 32px; }
+      .save-state { display: none; }
+      .button { padding: 9px 10px; font-size: 12px; }
+      .top-actions .button { padding: 8px; font-size: 11px; }
+      main { padding-top: 27px; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+      .stat-card { min-height: 88px; padding: 13px; }
+      .stat-value { font-size: 23px; }
+      .stat-icon { width: 34px; height: 34px; }
+      .filter-select { flex: 1; min-width: 130px; }
+      .toolbar-right .button { flex: 1; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .table-footer { align-items: start; flex-direction: column; }
+    }
+    @media print {
+      body { background: white; }
+      .topbar, .toolbar, .remove-row, .method-note, .event-field { display: none !important; }
+      main { width: 100%; padding: 0; }
+      .intro { margin: 0 0 16px; }
+      .workspace { box-shadow: none; border: 0; }
+      .table-wrap { overflow: visible; max-height: none; }
+      table { min-width: 100%; font-size: 8px; }
+      th { position: static; font-size: 7px; }
+      td { height: 34px; padding: 4px; }
+      .pin { position: static; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✳</span><span>TURNIERWERTUNG <span style="font-weight:450;color:#b8c5bb">/ Rechner</span></span></div>
+      <div class="top-actions">
+        <span class="save-state" id="saveState"><span class="save-dot"></span>Automatisch gespeichert</span>
+        <a class="button dark-secondary small" href="auswertung.html" title="Plätze 1 bis 3 anzeigen">🏆&nbsp; Auswertung</a>
+        <button class="button dark-secondary small" id="importButton" type="button" title="Eine zuvor exportierte Turnier-CSV laden">↑&nbsp; CSV-Import</button>
+        <input class="file-input-hidden" id="importFile" type="file" accept=".csv,text/csv" tabindex="-1" aria-hidden="true">
+        <button class="button dark-secondary small" id="exportButton" type="button" title="Wertungen als CSV herunterladen">↓&nbsp; CSV-Export</button>
+        <button class="button dark-secondary small" id="printButton" type="button" title="Wertungstabelle drucken">▤&nbsp; Drucken</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div>
+        <p class="eyebrow">meine VVB Tanzturnier </p>
+        <h1>Turnierauswertung.</h1>
+        <p class="subtitle">Wertungen erfassen, Ergebnisse vergleichen und Platzierungen sofort sehen.</p>
+      </div>
+      <div class="event-field">
+        <label for="eventName">Veranstaltung</label>
+        <input id="eventName" type="text" maxlength="80" placeholder="Name des Turniers">
+      </div>
+    </section>
+
+    <div class="stats-controls">
+      <button class="button secondary small" id="toggleStatsButton" type="button" aria-controls="stats" aria-expanded="true">−&nbsp; Kacheln ausblenden</button>
+    </div>
+    <section class="stats" id="stats" aria-label="Turnierübersicht">
+      <article class="stat-card"><div><div class="stat-label">Starter</div><div class="stat-value" id="starterCount">0</div></div><div class="stat-icon" aria-hidden="true">♟</div></article>
+      <article class="stat-card"><div><div class="stat-label">Fertig gewertet</div><div class="stat-value" id="judgedCount">0</div></div><div class="stat-icon" aria-hidden="true">✓</div></article>
+      <article class="stat-card"><div><div class="stat-label">Ausgefallen</div><div class="stat-value" id="withdrawnCount">0</div></div><div class="stat-icon" aria-hidden="true">–</div></article>
+      <article class="stat-card"><div><div class="stat-label">Wertungen erfasst</div><div class="stat-value" id="scoreCount">0<span style="font-size:14px;color:#8a948c;font-weight:600"> / 0</span></div></div><div class="stat-icon" aria-hidden="true">✎</div></article>
+      <article class="stat-card"><div><div class="stat-label">Bester Zwischenstand</div><div class="stat-value" id="topScore">–</div></div><div class="stat-icon" aria-hidden="true">↗</div></article>
+    </section>
+
+    <section class="workspace" aria-label="Wertungstabelle">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <select class="filter-select" id="ageFilter" aria-label="Altersklasse filtern"><option value="">Alle Altersklassen</option></select>
+          <select class="filter-select" id="divisionFilter" aria-label="Sparte filtern"><option value="">Alle Sparten</option></select>
+          <div class="search-wrap"><input class="search-input" id="searchInput" type="search" placeholder="Starter suchen…" aria-label="Starter suchen"></div>
+        </div>
+        <div class="toolbar-right">
+          <button class="button secondary danger small" id="resetTournamentButton" type="button" title="Turniername und alle Starter löschen">Turnier zurücksetzen</button>
+          <button class="button secondary danger small" id="resetScoresButton" type="button" title="Alle Wertungen für alle Starter löschen">↺&nbsp; Wertungen zurücksetzen</button>
+          <button class="button secondary small" id="sortButton" type="button">⇅&nbsp; Nach Startplatz</button>
+          <button class="button small" id="addButton" type="button">＋&nbsp; Starter hinzufügen</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="pin pin-one col-rank">Pl.</th>
+              <th class="pin pin-two col-person">Starter</th>
+              <th class="col-club">Verein</th>
+              <th class="col-category">Altersklasse</th>
+              <th class="col-category">Sparte</th>
+              <th class="col-start">Startplatz</th>
+              <th class="score-head">Punkt 1</th><th class="score-head">Punkt 2</th><th class="score-head">Punkt 3</th>
+              <th class="score-head">Punkt 4</th><th class="score-head">Punkt 5</th><th class="score-head">Punkt 6</th>
+              <th class="score-head">Punkt 7</th>
+              <th class="result-head">Zwischenstand*</th><th class="result-head" title="Ab 3 Wertungen: Streichwertung und Entscheidung bei Punktgleichstand">Max / Streichw.</th><th class="result-head">Min</th>
+              <th class="col-start">Ausfall</th><th aria-label="Aktionen"></th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="tableCount">Noch keine Starter eingetragen</span>
+        <span class="legend"><span class="legend-mark"></span>Ab 3 Wertungen ohne höchste und niedrigste Einzelwertung</span>
+      </div>
+    </section>
+    <p class="method-note">* Wertungen sind ganze Zahlen von 0 bis 100. Der Zwischenstand aktualisiert sich mit jeder Eingabe: Bei 1–2 Wertungen zählt die Summe, ab 3 werden die höchste und niedrigste Wertung abgezogen. Bei gleichem Zwischenstand entscheidet ab 3 Wertungen die höhere Streichwertung. Die Platzierung vergleicht Starter derselben Altersklasse, Sparte und Anzahl eingetragener Wertungen. Bei sieben Wertungen steht die Endwertung fest.</p>
+  </main>
+
+  <dialog id="starterDialog">
+    <form id="starterForm">
+      <div class="dialog-head">
+        <div><h2 id="dialogTitle">Starter hinzufügen</h2><p id="dialogDescription">Die Wertung kann anschließend direkt in der Tabelle eingetragen werden.</p></div>
+        <button class="close-button" id="closeDialog" type="button" aria-label="Schließen">×</button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label for="formName">Name / Beitrag *</label><input id="formName" name="name" required maxlength="100" placeholder="z. B. Jugendgarde"></div>
+        <div class="field"><label for="formClub">Verein</label><input id="formClub" name="club" maxlength="100" placeholder="Vereinsname"></div>
+        <div class="field"><label for="formAge">Altersklasse *</label><input id="formAge" name="age" required list="ageOptions" maxlength="40" placeholder="z. B. Jugend"><datalist id="ageOptions"><option value="Jugend"><option value="Junioren"><option value="Aktive"></datalist></div>
+        <div class="field"><label for="formDivision">Sparte *</label><select id="formDivision" name="division" required></select></div>
+        <div class="field" id="newDivisionField" hidden><label for="formNewDivision">Neue Sparte *</label><input id="formNewDivision" name="newDivision" maxlength="50" placeholder="Name der neuen Sparte"></div>
+        <div class="field"><label for="formStart">Startnummer</label><input id="formStart" name="start" type="number" min="1" step="1" placeholder="Automatisch"></div>
+      </div>
+      <input id="formEntryId" name="entryId" type="hidden">
+      <div class="dialog-footer">
+        <button class="button secondary" id="cancelDialog" type="button">Abbrechen</button>
+        <button class="button" id="submitStarterButton" type="submit">Starter anlegen</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+      const STORAGE_KEY = "turnierwertungsrechner-v1";
+      const emptyScores = () => Array(7).fill(null);
+      const STARTERS = [];
+      let state = { event: "", entries: [], sortBy: "start", starterImportVersion: 3, showStats: true };
+      let toastTimer;
+
+      const elements = {
+        event: document.getElementById("eventName"),
+        body: document.getElementById("tableBody"),
+        ageFilter: document.getElementById("ageFilter"),
+        divisionFilter: document.getElementById("divisionFilter"),
+        search: document.getElementById("searchInput"),
+        dialog: document.getElementById("starterDialog"),
+        form: document.getElementById("starterForm"),
+        formStart: document.getElementById("formStart"),
+        toast: document.getElementById("toast")
+      };
+
+      function loadState() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (!saved) {
+            state.entries = createStarterEntries();
+            saveState();
+            return;
+          }
+          const parsed = JSON.parse(saved);
+          if (!parsed || !Array.isArray(parsed.entries)) throw new Error("Ungültige gespeicherte Turnierdaten.");
+          state.event = typeof parsed.event === "string" ? parsed.event : "";
+          state.sortBy = parsed.sortBy === "rank" ? "rank" : "start";
+          state.showStats = parsed.showStats !== false;
+          if (parsed.entries.length === 0 && parsed.starterImportVersion !== 3) {
+            state.entries = createStarterEntries();
+          } else {
+            state.entries = parsed.entries.map((entry) => ({
+              id: String(entry.id || crypto.randomUUID()),
+              name: String(entry.name || ""),
+              club: String(entry.club || ""),
+              age: String(entry.age || ""),
+              division: String(entry.division || ""),
+              start: Number.isInteger(Number(entry.start)) && Number(entry.start) > 0 ? Number(entry.start) : 1,
+              scores: Array.isArray(entry.scores) ? Array.from({ length: 7 }, (_, i) => validScore(entry.scores[i])) : emptyScores(),
+              withdrawn: entry.withdrawn === true
+            }));
+          }
+          if (parsed.starterImportVersion !== 3) {
+            const importedCategories = new Map(STARTERS.map(([age, division, club, name, start]) =>
+              [`${club}\u0000${name}\u0000${start}`, { age, division }]));
+            for (const entry of state.entries) {
+              const category = importedCategories.get(`${entry.club}\u0000${entry.name}\u0000${entry.start}`);
+              if (category) Object.assign(entry, category);
+            }
+            state.starterImportVersion = 3;
+          }
+          saveState();
+        } catch (error) {
+          console.error("Turnierdaten konnten nicht geladen werden:", error);
+          showToast("Gespeicherte Daten konnten nicht geladen werden.");
+        }
+      }
+
+      function createStarterEntries() {
+        return STARTERS.map(([age, division, club, name, start, scores]) => ({
+          id: crypto.randomUUID(),
+          age,
+          division,
+          club,
+          name,
+          start,
+          scores: scores ? [...scores] : emptyScores()
+        }));
+      }
+
+      function validScore(value) {
+        if (value === null || value === undefined || value === "") return null;
+        const score = Number(value);
+        return Number.isInteger(score) && score >= 0 && score <= 100 ? score : null;
+      }
+
+      function saveState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          const status = document.getElementById("saveState");
+          status.innerHTML = '<span class="save-dot"></span>Automatisch gespeichert';
+        } catch (error) {
+          console.error("Turnierdaten konnten nicht gespeichert werden:", error);
+          const status = document.getElementById("saveState");
+          status.textContent = "Speichern fehlgeschlagen";
+        }
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        })[char]);
+      }
+
+      function getResult(entry) {
+        if (entry.withdrawn) return { score: null, max: null, min: null, tieBreakScore: null, count: 0, complete: false };
+        const scores = entry.scores.filter((score) => score !== null);
+        if (!scores.length) return { score: null, max: null, min: null, tieBreakScore: null, count: 0, complete: false };
+        const sorted = [...scores].sort((a, b) => a - b);
+        const score = scores.length >= 3
+          ? scores.reduce((sum, value) => sum + value, 0) - sorted[0] - sorted[sorted.length - 1]
+          : scores.reduce((sum, value) => sum + value, 0);
+        return {
+          score,
+          max: sorted[sorted.length - 1],
+          min: sorted[0],
+          tieBreakScore: scores.length >= 3 ? sorted[sorted.length - 1] : null,
+          count: scores.length,
+          complete: scores.length === 7
+        };
+      }
+
+      function getRanks() {
+        const groups = new Map();
+        for (const entry of state.entries) {
+          if (entry.withdrawn) continue;
+          const result = getResult(entry);
+          if (result.score === null) continue;
+          const key = `${entry.age.toLocaleLowerCase()}\\u0000${entry.division.toLocaleLowerCase()}\\u0000${result.count}`;
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key).push({ id: entry.id, score: result.score, tieBreakScore: result.tieBreakScore });
+        }
+        const ranks = new Map();
+        for (const entries of groups.values()) {
+          entries.sort((a, b) =>
+            Math.abs(b.score - a.score) > 1e-9 ? b.score - a.score :
+              (b.tieBreakScore ?? -Infinity) - (a.tieBreakScore ?? -Infinity));
+          let previousEntry = null;
+          let rank = 0;
+          entries.forEach((entry, index) => {
+            if (!previousEntry || Math.abs(entry.score - previousEntry.score) > 1e-9 ||
+                entry.tieBreakScore !== previousEntry.tieBreakScore) {
+              rank = index + 1;
+            }
+            ranks.set(entry.id, rank);
+            previousEntry = entry;
+          });
+        }
+        return ranks;
+      }
+
+      function uniqueValues(key) {
+        return [...new Set(state.entries.map((entry) => entry[key].trim()).filter(Boolean))]
+          .sort((a, b) => a.localeCompare(b, "de"));
+      }
+
+      function updateFilters() {
+        const age = elements.ageFilter.value;
+        const division = elements.divisionFilter.value;
+        elements.ageFilter.innerHTML = '<option value="">Alle Altersklassen</option>' +
+          uniqueValues("age").map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+        elements.divisionFilter.innerHTML = '<option value="">Alle Sparten</option>' +
+          uniqueValues("division").map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+        if (uniqueValues("age").includes(age)) elements.ageFilter.value = age;
+        if (uniqueValues("division").includes(division)) elements.divisionFilter.value = division;
+      }
+
+      function getVisibleEntries() {
+        const query = elements.search.value.trim().toLocaleLowerCase();
+        return state.entries.filter((entry) => {
+          const matchesAge = !elements.ageFilter.value || entry.age === elements.ageFilter.value;
+          const matchesDivision = !elements.divisionFilter.value || entry.division === elements.divisionFilter.value;
+          const matchesQuery = !query || [entry.name, entry.club, entry.age, entry.division].some((value) => value.toLocaleLowerCase().includes(query));
+          return matchesAge && matchesDivision && matchesQuery;
+        });
+      }
+
+      function render() {
+        const stats = document.getElementById("stats");
+        const toggleStatsButton = document.getElementById("toggleStatsButton");
+        stats.hidden = !state.showStats;
+        toggleStatsButton.setAttribute("aria-expanded", String(state.showStats));
+        toggleStatsButton.innerHTML = state.showStats ? "−&nbsp; Kacheln ausblenden" : "+&nbsp; Kacheln einblenden";
+        updateFilters();
+        const ranks = getRanks();
+        const visible = getVisibleEntries();
+        const sorted = [...visible].sort((a, b) => {
+          if (state.sortBy === "rank") {
+            const rankA = ranks.get(a.id) ?? Infinity;
+            const rankB = ranks.get(b.id) ?? Infinity;
+            if (rankA !== rankB) return rankA - rankB;
+          }
+          return a.age.localeCompare(b.age, "de") || a.division.localeCompare(b.division, "de") || a.start - b.start || a.name.localeCompare(b.name, "de");
+        });
+        elements.body.innerHTML = sorted.length ? sorted.map((entry) => renderRow(entry, ranks.get(entry.id))).join("") :
+          `<tr><td colspan="18"><div class="empty"><div class="empty-mark">＋</div><strong>${state.entries.length ? "Keine passenden Starter" : "Noch keine Starter angelegt"}</strong><p>${state.entries.length ? "Passe die Filter oder die Suche an." : "Lege den ersten Starter an, um mit der Wertung zu beginnen."}</p>${state.entries.length ? "" : '<button class="button small" type="button" data-action="add">＋ Starter hinzufügen</button>'}</div></td></tr>`;
+        renderStats();
+        document.getElementById("tableCount").textContent = `${visible.length} von ${state.entries.length} ${state.entries.length === 1 ? "Starter" : "Startern"}`;
+        document.getElementById("sortButton").innerHTML = state.sortBy === "start" ? "⇅&nbsp; Nach Startplatz" : "⇅&nbsp; Nach Platzierung";
+      }
+
+      function renderRow(entry, rank) {
+        const result = getResult(entry);
+        const rankClass = rank === 1 ? "first" : rank === 2 ? "second" : rank === 3 ? "third" : "";
+        const resultValue = (value) => value === null ? "–" : Number.isInteger(value) ? String(value) : value.toFixed(2).replace(".", ",");
+        const scoreClass = result.score === null ? "muted" : result.complete ? "" : "provisional";
+        const scoreTitle = result.score === null ? "" : `${result.complete ? "Endwertung" : "Zwischenstand"} · ${result.count} von 7 Wertungen`;
+        const maxTitle = result.tieBreakScore === null ? "Noch keine Streichwertung (ab 3 Einzelwertungen)" : "Höchste Wertung / Streichwertung bei Punktgleichstand";
+        return `        <tr data-id="${escapeHtml(entry.id)}" class="${entry.withdrawn ? "is-withdrawn" : ""}">
+        <td class="pin pin-one col-rank"><span class="rank-pill ${entry.withdrawn ? "withdrawn" : rankClass}">${entry.withdrawn ? "A" : rank ?? "–"}</span></td>
+        <td class="pin pin-two col-person"><div class="person-name">${escapeHtml(entry.name)}</div><div class="person-detail">${entry.withdrawn ? "Ausgefallen" : escapeHtml(entry.division)}</div></td>
+          <td class="col-club" title="${escapeHtml(entry.club)}">${escapeHtml(entry.club || "–")}</td>
+          <td class="col-category">${escapeHtml(entry.age)}</td>
+          <td class="col-category">${escapeHtml(entry.division)}</td>
+          <td class="col-start"><input class="number-input start-input" type="number" min="1" step="1" value="${entry.start}" aria-label="Startplatz für ${escapeHtml(entry.name)}" data-action="start"></td>
+          ${entry.scores.map((score, index) => `<td class="score-cell"><input class="number-input" type="number" min="0" max="100" step="1" value="${score ?? ""}" placeholder="–" aria-label="Punktzahl ${index + 1} für ${escapeHtml(entry.name)}" data-score="${index}" ${entry.withdrawn ? "disabled title=\"Starter ist ausgefallen\"" : ""}></td>`).join("")}
+          <td class="result-cell ${scoreClass}" title="${scoreTitle}">${resultValue(result.score)}</td>
+          <td class="result-cell ${result.max === null ? "muted" : ""}" title="${maxTitle}">${resultValue(result.max)}</td>
+          <td class="result-cell ${result.min === null ? "muted" : ""}">${resultValue(result.min)}</td>
+          <td><label class="withdrawn-label"><input type="checkbox" data-action="withdrawn" aria-label="${escapeHtml(entry.name)} als ausgefallen markieren" ${entry.withdrawn ? "checked" : ""}> Ausfall</label></td>
+          <td><div class="row-actions">
+            <button class="edit-row" type="button" data-action="edit" aria-label="${escapeHtml(entry.name)} bearbeiten" title="Starter bearbeiten">✎</button>
+            <button class="remove-row" type="button" data-action="remove" aria-label="${escapeHtml(entry.name)} entfernen" title="Starter entfernen">×</button>
+          </div></td>
+        </tr>`;
+      }
+
+      function renderStats() {
+        const activeEntries = state.entries.filter((entry) => !entry.withdrawn);
+        const completed = activeEntries.filter((entry) => getResult(entry).complete);
+        const scored = activeEntries.filter((entry) => getResult(entry).score !== null);
+        const enteredScores = activeEntries.reduce((count, entry) => count + entry.scores.filter((score) => score !== null).length, 0);
+        const maxScore = scored.length ? Math.max(...scored.map((entry) => getResult(entry).score)) : null;
+        document.getElementById("starterCount").textContent = state.entries.length;
+        document.getElementById("judgedCount").textContent = completed.length;
+        document.getElementById("withdrawnCount").textContent = state.entries.filter((entry) => entry.withdrawn).length;
+        document.getElementById("scoreCount").innerHTML = `${enteredScores}<span style="font-size:14px;color:#8a948c;font-weight:600"> / ${activeEntries.length * 7}</span>`;
+        document.getElementById("topScore").textContent = maxScore === null ? "–" : Number.isInteger(maxScore) ? maxScore : maxScore.toFixed(2).replace(".", ",");
+      }
+
+      function resetScores() {
+        const scoreCount = state.entries.reduce((count, entry) =>
+          count + entry.scores.filter((score) => score !== null).length, 0);
+        if (!scoreCount) {
+          showToast("Es sind noch keine Wertungen eingetragen.");
+          return;
+        }
+        if (!window.confirm(`Alle ${scoreCount} eingetragenen Wertungen für sämtliche Starter zurücksetzen? Die Starterliste und Ausfallmarkierungen bleiben erhalten.`)) {
+          return;
+        }
+        for (const entry of state.entries) entry.scores = emptyScores();
+        saveState();
+        render();
+        showToast(`${scoreCount} Wertungen wurden zurückgesetzt.`);
+      }
+
+      function resetTournament() {
+        if (!state.entries.length && !state.event) {
+          showToast("Das Turnier ist bereits leer.");
+          return;
+        }
+        const eventName = state.event ? ` „${state.event}“` : "";
+        if (!window.confirm(`Turnier${eventName} vollständig zurücksetzen? Alle ${state.entries.length} Starter, Wertungen und Ausfallmarkierungen sowie der Turniername werden gelöscht.`)) {
+          return;
+        }
+        state.entries = [];
+        state.event = "";
+        state.sortBy = "start";
+        elements.event.value = "";
+        elements.ageFilter.value = "";
+        elements.divisionFilter.value = "";
+        elements.search.value = "";
+        saveState();
+        render();
+        showToast("Turnier wurde zurückgesetzt. Du kannst neue Starter hinzufügen oder importieren.");
+      }
+
+      function updateLiveResults() {
+        const ranks = getRanks();
+        for (const row of elements.body.querySelectorAll("tr[data-id]")) {
+          const entry = state.entries.find((item) => item.id === row.dataset.id);
+          if (!entry) continue;
+          const result = getResult(entry);
+          const cells = row.querySelectorAll(".result-cell");
+          const values = [result.score, result.max, result.min];
+          values.forEach((value, index) => {
+            cells[index].textContent = value === null ? "–" : Number.isInteger(value) ? String(value) : value.toFixed(2).replace(".", ",");
+            cells[index].classList.toggle("muted", value === null);
+          });
+          cells[1].title = result.tieBreakScore === null
+            ? "Noch keine Streichwertung (ab 3 Einzelwertungen)"
+            : "Höchste Wertung / Streichwertung bei Punktgleichstand";
+          cells[0].classList.toggle("provisional", result.score !== null && !result.complete);
+          const rank = ranks.get(entry.id);
+          const pill = row.querySelector(".rank-pill");
+          pill.textContent = rank ?? "–";
+          pill.classList.toggle("first", rank === 1);
+          pill.classList.toggle("second", rank === 2);
+          pill.classList.toggle("third", rank === 3);
+        }
+        renderStats();
+      }
+
+      function showToast(message) {
+        elements.toast.textContent = message;
+        elements.toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => elements.toast.classList.remove("show"), 2600);
+      }
+
+      function updateNewDivisionField() {
+        const useNewDivision = document.getElementById("formDivision").value === "__new__";
+        const newDivisionField = document.getElementById("newDivisionField");
+        newDivisionField.hidden = !useNewDivision;
+        document.getElementById("formNewDivision").required = useNewDivision;
+        if (!useNewDivision) document.getElementById("formNewDivision").value = "";
+      }
+
+      function openDialog(entry = null) {
+        elements.form.reset();
+        document.getElementById("formEntryId").value = entry?.id || "";
+        const age = entry?.age || elements.ageFilter.value || uniqueValues("age")[0] || "";
+        const division = entry?.division || elements.divisionFilter.value || uniqueValues("division")[0] || "";
+        const divisions = uniqueValues("division");
+        document.getElementById("formDivision").innerHTML =
+          divisions.map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("") +
+          '<option value="__new__">＋ Neue Sparte eingeben…</option>';
+        document.getElementById("formAge").value = age;
+        document.getElementById("formDivision").value = divisions.includes(division) ? division : "__new__";
+        if (!divisions.includes(division) && division) document.getElementById("formNewDivision").value = division;
+        document.getElementById("dialogTitle").textContent = entry ? "Starter bearbeiten" : "Starter hinzufügen";
+        document.getElementById("dialogDescription").textContent = entry
+          ? "Name, Verein, Altersklasse, Sparte und Startnummer anpassen."
+          : "Die Wertung kann anschließend direkt in der Tabelle eingetragen werden.";
+        document.getElementById("submitStarterButton").textContent = entry ? "Änderungen speichern" : "Starter anlegen";
+        document.getElementById("formName").value = entry?.name || "";
+        document.getElementById("formClub").value = entry?.club || "";
+        elements.formStart.value = entry ? String(entry.start) : "";
+        updateNewDivisionField();
+        if (typeof elements.dialog.showModal === "function") elements.dialog.showModal();
+        else elements.dialog.setAttribute("open", "");
+        requestAnimationFrame(() => document.getElementById("formName").focus());
+      }
+
+      function toCsvCell(value) {
+        return `"${String(value ?? "").replaceAll('"', '""')}"`;
+      }
+
+      function parseCsv(text) {
+        const firstLine = text.split(/\r?\n/, 1)[0] || "";
+        const separatorCounts = [",", ";", "\t"].map((separator) => {
+          let count = 0;
+          let quoted = false;
+          for (let index = 0; index < firstLine.length; index += 1) {
+            if (firstLine[index] === '"') {
+              if (quoted && firstLine[index + 1] === '"') index += 1;
+              else quoted = !quoted;
+            } else if (firstLine[index] === separator && !quoted) {
+              count += 1;
+            }
+          }
+          return count;
+        });
+        const separator = [",", ";", "\t"][separatorCounts.indexOf(Math.max(...separatorCounts))];
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let quoted = false;
+
+        for (let index = 0; index < text.length; index += 1) {
+          const char = text[index];
+          if (quoted) {
+            if (char === '"' && text[index + 1] === '"') {
+              cell += '"';
+              index += 1;
+            } else if (char === '"') {
+              quoted = false;
+            } else {
+              cell += char;
+            }
+          } else if (char === '"' && cell.length === 0) {
+            quoted = true;
+          } else if (char === separator) {
+            row.push(cell);
+            cell = "";
+          } else if (char === "\n" || char === "\r") {
+            if (char === "\r" && text[index + 1] === "\n") index += 1;
+            row.push(cell);
+            if (row.some((value) => value.trim() !== "")) rows.push(row);
+            row = [];
+            cell = "";
+          } else {
+            cell += char;
+          }
+        }
+        if (quoted) throw new Error("Die CSV-Datei enthält ein nicht geschlossenes Anführungszeichen.");
+        row.push(cell);
+        if (row.some((value) => value.trim() !== "")) rows.push(row);
+        if (rows.length < 2) throw new Error("Die CSV-Datei enthält keine Starterdaten.");
+        return rows;
+      }
+
+      function normalizeHeader(value) {
+        return value.replace(/^\uFEFF/, "").trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .toLocaleLowerCase().replace(/[^a-z0-9]/g, "");
+      }
+
+      function parseImportCsv(text) {
+        const rows = parseCsv(text);
+        const headers = rows[0].map(normalizeHeader);
+        const columns = new Map(headers.map((header, index) => [header, index]));
+        const column = (name, required = true) => {
+          const index = columns.get(name);
+          if (index === undefined && required) throw new Error(`Die CSV-Datei benötigt eine Spalte „${name}“.`);
+          return index;
+        };
+        const ageColumn = column("altersklasse");
+        const divisionColumn = column("sparte");
+        const clubColumn = column("verein");
+        const nameColumn = column("name");
+        const startColumnIndex = columns.has("startnummer") ? column("startnummer") :
+          columns.has("startplatz") ? column("startplatz") : column("startnummer");
+        const eventColumn = column("veranstaltung", false);
+        const statusColumn = column("status", false);
+        const scoreColumns = Array.from({ length: 7 }, (_, index) => column(`punkte${index + 1}`, false));
+        const imported = [];
+        const startPlaces = new Set();
+        let event = "";
+
+        for (const [index, cells] of rows.slice(1).entries()) {
+          const value = (position) => position === undefined ? "" : (cells[position] || "").trim();
+          const rowNumber = index + 2;
+          const age = value(ageColumn);
+          const division = value(divisionColumn);
+          const name = value(nameColumn);
+          const club = value(clubColumn);
+          const startText = value(startColumnIndex);
+          if (!age || !division || !name || !startText) {
+            throw new Error(`In CSV-Zeile ${rowNumber} fehlen Altersklasse, Sparte, Name oder Startplatz.`);
+          }
+          const start = Number(startText);
+          if (!Number.isInteger(start) || start < 1) {
+            throw new Error(`Der Startplatz in CSV-Zeile ${rowNumber} ist keine positive ganze Zahl.`);
+          }
+          const groupKey = `${age.toLocaleLowerCase()}\u0000${division.toLocaleLowerCase()}\u0000${start}`;
+          if (startPlaces.has(groupKey)) {
+            throw new Error(`Der Startplatz ${start} ist in CSV-Zeile ${rowNumber} innerhalb derselben Altersklasse und Sparte doppelt vergeben.`);
+          }
+          startPlaces.add(groupKey);
+          const scores = scoreColumns.map((scoreColumn) => {
+            const rawScore = value(scoreColumn);
+            if (!rawScore) return null;
+            const score = Number(rawScore);
+            if (!Number.isInteger(score) || score < 0 || score > 100) {
+              throw new Error(`Die Punktzahl in CSV-Zeile ${rowNumber} muss eine ganze Zahl zwischen 0 und 100 sein.`);
+            }
+            return score;
+          });
+          const status = value(statusColumn).toLocaleLowerCase();
+          const withdrawn = ["ausgefallen", "ja", "true", "1"].includes(status);
+          if (!event && eventColumn !== undefined) event = value(eventColumn);
+          imported.push({
+            id: crypto.randomUUID(),
+            age,
+            division,
+            club,
+            name,
+            start,
+            scores,
+            withdrawn
+          });
+        }
+        if (!imported.length) throw new Error("Die CSV-Datei enthält keine gültigen Starter.");
+        return { entries: imported, event };
+      }
+
+      async function importCsv(file) {
+        try {
+          const text = await file.text();
+          const imported = parseImportCsv(text);
+          if (!window.confirm(`${imported.entries.length} Starter und ihre Wertungen importieren? Die derzeitige Starterliste und alle nicht exportierten Änderungen werden ersetzt.`)) {
+            return;
+          }
+          state.entries = imported.entries;
+          if (imported.event) {
+            state.event = imported.event;
+            elements.event.value = imported.event;
+          }
+          state.sortBy = "start";
+          elements.ageFilter.value = "";
+          elements.divisionFilter.value = "";
+          elements.search.value = "";
+          saveState();
+          render();
+          showToast(`${imported.entries.length} Starter wurden importiert.`);
+        } catch (error) {
+          console.error("CSV-Import fehlgeschlagen:", error);
+          showToast(error instanceof Error ? error.message : "Die CSV-Datei konnte nicht importiert werden.");
+        } finally {
+          document.getElementById("importFile").value = "";
+        }
+      }
+
+      function exportCsv() {
+        if (!state.entries.length) {
+          showToast("Füge zuerst mindestens einen Starter hinzu.");
+          return;
+        }
+        const ranks = getRanks();
+        const headers = ["Veranstaltung", "Altersklasse", "Sparte", "Verein", "Name", "Startplatz", ...Array.from({ length: 7 }, (_, i) => `Punkte ${i + 1}`), "Zwischenstand", "Max", "Streichwertung", "Min", "Wertungen erfasst", "Ranking", "Status"];
+        const rows = [...state.entries]
+          .sort((a, b) => a.age.localeCompare(b.age, "de") || a.division.localeCompare(b.division, "de") || a.start - b.start)
+          .map((entry) => {
+            const result = getResult(entry);
+            return [state.event, entry.age, entry.division, entry.club, entry.name, entry.start, ...entry.scores.map((score) => score ?? ""), result.score ?? "", result.max ?? "", result.tieBreakScore ?? "", result.min ?? "", result.count, ranks.get(entry.id) ?? "", entry.withdrawn ? "Ausgefallen" : ""];
+          });
+        const csv = [headers, ...rows].map((row) => row.map(toCsvCell).join(";")).join("\r\n");
+        const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${(state.event || "turnierwertung").replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "turnierwertung"}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      elements.event.addEventListener("input", () => {
+        state.event = elements.event.value;
+        saveState();
+      });
+
+      document.getElementById("addButton").addEventListener("click", openDialog);
+      document.getElementById("formDivision").addEventListener("change", updateNewDivisionField);
+      document.getElementById("closeDialog").addEventListener("click", () => elements.dialog.close());
+      document.getElementById("cancelDialog").addEventListener("click", () => elements.dialog.close());
+      elements.dialog.addEventListener("click", (event) => {
+        if (event.target === elements.dialog) elements.dialog.close();
+      });
+      elements.form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const formData = new FormData(elements.form);
+        const age = String(formData.get("age")).trim();
+        const selectedDivision = String(formData.get("division")).trim();
+        const division = selectedDivision === "__new__"
+          ? String(formData.get("newDivision")).trim()
+          : selectedDivision;
+        const entryId = String(formData.get("entryId") || "");
+        const existingEntry = entryId ? state.entries.find((entry) => entry.id === entryId) : null;
+        if (entryId && !existingEntry) {
+          showToast("Der zu bearbeitende Starter wurde nicht gefunden.");
+          elements.dialog.close();
+          return;
+        }
+        const groupEntries = state.entries.filter((entry) =>
+          entry.id !== entryId &&
+          entry.age.toLocaleLowerCase() === age.toLocaleLowerCase() &&
+          entry.division.toLocaleLowerCase() === division.toLocaleLowerCase());
+        const requestedStart = Number(formData.get("start"));
+        const start = Number.isInteger(requestedStart) && requestedStart > 0 ? requestedStart : Math.max(0, ...groupEntries.map((entry) => entry.start)) + 1;
+        const name = String(formData.get("name")).trim();
+        if (!age || !division || !name) {
+          showToast("Name, Altersklasse und Sparte müssen ausgefüllt sein.");
+          return;
+        }
+        if (groupEntries.some((entry) => entry.start === start)) {
+          showToast(`Startplatz ${start} ist in dieser Sparte bereits vergeben.`);
+          elements.formStart.focus();
+          return;
+        }
+        if (existingEntry) {
+          Object.assign(existingEntry, {
+            name,
+            club: String(formData.get("club")).trim(),
+            age,
+            division,
+            start
+          });
+        } else {
+          state.entries.push({
+            id: crypto.randomUUID(),
+            name,
+            club: String(formData.get("club")).trim(),
+            age,
+            division,
+            start,
+            scores: emptyScores()
+          });
+        }
+        if (typeof elements.dialog.close === "function") elements.dialog.close();
+        saveState();
+        render();
+        showToast(existingEntry ? `Änderungen für ${name} wurden gespeichert.` : `${name} wurde zur Starterliste hinzugefügt.`);
+      });
+
+      elements.body.addEventListener("input", (event) => {
+        const row = event.target.closest("tr[data-id]");
+        if (!row) return;
+        const entry = state.entries.find((item) => item.id === row.dataset.id);
+        if (!entry) return;
+        if (event.target.hasAttribute("data-score")) {
+          const index = Number(event.target.dataset.score);
+          const score = event.target.value === "" ? null : validScore(event.target.value);
+          if (score === null && event.target.value !== "") {
+            event.target.value = "";
+            showToast("Punktzahlen müssen ganze Zahlen zwischen 0 und 100 sein.");
+          }
+          entry.scores[index] = score;
+          saveState();
+          updateLiveResults();
+        }
+      });
+
+      elements.body.addEventListener("change", (event) => {
+        const row = event.target.closest("tr[data-id]");
+        if (!row) return;
+        const entry = state.entries.find((item) => item.id === row.dataset.id);
+        if (!entry) return;
+        if (event.target.hasAttribute("data-score")) {
+          if (state.sortBy === "rank") render();
+        } else if (event.target.dataset.action === "start") {
+          const start = Number(event.target.value);
+          const duplicate = state.entries.some((other) => other.id !== entry.id &&
+            other.age.toLocaleLowerCase() === entry.age.toLocaleLowerCase() &&
+            other.division.toLocaleLowerCase() === entry.division.toLocaleLowerCase() &&
+            other.start === start);
+          if (!Number.isInteger(start) || start < 1 || duplicate) {
+            event.target.value = entry.start;
+            showToast(duplicate ? "Dieser Startplatz ist bereits vergeben." : "Startplatz muss eine positive ganze Zahl sein.");
+            return;
+          }
+          entry.start = start;
+          saveState();
+          render();
+        } else if (event.target.dataset.action === "withdrawn") {
+          if (event.target.checked && entry.scores.some((score) => score !== null) &&
+              !window.confirm(`„${entry.name}“ als ausgefallen markieren? Die eingetragenen Punkte bleiben gespeichert, zählen aber bis zur Aufhebung des Ausfalls nicht für Wertung und Platzierung.`)) {
+            event.target.checked = false;
+            return;
+          }
+          entry.withdrawn = event.target.checked;
+          saveState();
+          render();
+          showToast(entry.withdrawn ? "Starter als ausgefallen markiert." : "Ausfall-Markierung aufgehoben.");
+        }
+      });
+
+      elements.body.addEventListener("click", (event) => {
+        if (event.target.closest('[data-action="add"]')) {
+          openDialog();
+          return;
+        }
+        const editButton = event.target.closest('[data-action="edit"]');
+        if (editButton) {
+          const row = editButton.closest("tr[data-id]");
+          const entry = state.entries.find((item) => item.id === row?.dataset.id);
+          if (entry) openDialog(entry);
+          return;
+        }
+        const removeButton = event.target.closest('[data-action="remove"]');
+        if (!removeButton) return;
+        const row = removeButton.closest("tr[data-id]");
+        const entry = state.entries.find((item) => item.id === row.dataset.id);
+        if (!entry || !window.confirm(`„${entry.name}“ wirklich aus der Starterliste entfernen?`)) return;
+        state.entries = state.entries.filter((item) => item.id !== entry.id);
+        saveState();
+        render();
+        showToast("Starter wurde entfernt.");
+      });
+
+      elements.ageFilter.addEventListener("change", render);
+      elements.divisionFilter.addEventListener("change", render);
+      elements.search.addEventListener("input", render);
+      document.getElementById("toggleStatsButton").addEventListener("click", () => {
+        state.showStats = !state.showStats;
+        saveState();
+        render();
+      });
+      document.getElementById("sortButton").addEventListener("click", () => {
+        state.sortBy = state.sortBy === "start" ? "rank" : "start";
+        saveState();
+        render();
+      });
+      document.getElementById("resetScoresButton").addEventListener("click", resetScores);
+      document.getElementById("resetTournamentButton").addEventListener("click", resetTournament);
+      document.getElementById("exportButton").addEventListener("click", exportCsv);
+      document.getElementById("importButton").addEventListener("click", () => document.getElementById("importFile").click());
+      document.getElementById("importFile").addEventListener("change", (event) => {
+        const file = event.target.files?.[0];
+        if (file) importCsv(file);
+      });
+      document.getElementById("printButton").addEventListener("click", () => window.print());
+
+      loadState();
+      elements.event.value = state.event;
+      render();
+    })();
+  </script>
+</body>
+</html>
