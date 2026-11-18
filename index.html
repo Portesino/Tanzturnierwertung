@@ -45,23 +45,24 @@
     .button.dark-secondary:hover { background: #35473c; }
     .button.small { padding: 8px 11px; font-size: 12px; }
     .button.icon-only { padding: 8px; width: 34px; height: 34px; }
-    main { padding: 38px 0 60px; }
-    .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .13em; font-weight: 800; font-size: 10px; margin: 0 0 9px; }
-    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 27px; }
-    h1 { font-size: clamp(29px, 3.2vw, 42px); letter-spacing: -.045em; line-height: 1.05; margin: 0; }
-    .subtitle { color: var(--muted); font-size: 14px; margin: 11px 0 0; }
-    .stats-controls { display: flex; justify-content: flex-end; margin: -12px 0 10px; }
-    .event-field { width: 255px; }
-    .event-field label, .field label { display: block; color: var(--muted); font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+    main { padding: 24px 0 60px; }
+    .eyebrow { color: var(--green); text-transform: uppercase; letter-spacing: .13em; font-weight: 800; font-size: 10px; margin: 0 0 5px; }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 17px; }
+    h1 { font-size: clamp(27px, 2.7vw, 36px); letter-spacing: -.045em; line-height: 1.05; margin: 0; }
+    .subtitle { color: var(--muted); font-size: 13px; margin: 7px 0 0; }
+    .stats-controls { display: flex; justify-content: flex-end; margin: -7px 0 6px; }
+    .stats-controls .button { padding: 7px 10px; font-size: 11px; }
+    .event-field { width: 225px; }
+    .event-field label, .field label { display: block; color: var(--muted); font-size: 11px; font-weight: 700; margin-bottom: 5px; }
     .event-field input, .field input, .field select, .filter-select, .search-input { width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); outline: none; }
-    .event-field input { padding: 10px 12px; font-size: 13px; font-weight: 650; }
+    .event-field input { padding: 8px 11px; font-size: 12px; font-weight: 650; }
     input:focus, select:focus { border-color: #81a78b !important; box-shadow: 0 0 0 3px rgb(42 105 75 / 10%); }
-    .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
     .stats[hidden] { display: none; }
-    .stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: 13px; min-height: 105px; padding: 18px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 3px 12px rgb(23 39 32 / 2%); }
-    .stat-label { color: var(--muted); font-weight: 650; font-size: 12px; margin-bottom: 9px; }
-    .stat-value { font-size: 27px; letter-spacing: -.04em; font-weight: 760; }
-    .stat-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--mint); display: grid; place-items: center; color: var(--green); font-size: 17px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--line); border-radius: 11px; min-height: 78px; padding: 11px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 3px 12px rgb(23 39 32 / 2%); }
+    .stat-label { color: var(--muted); font-weight: 650; font-size: 11px; margin-bottom: 5px; }
+    .stat-value { font-size: 23px; letter-spacing: -.04em; font-weight: 760; }
+    .stat-icon { width: 34px; height: 34px; border-radius: 10px; background: var(--mint); display: grid; place-items: center; color: var(--green); font-size: 15px; }
     .workspace { border: 1px solid var(--line); background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
     .toolbar { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); }
     .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 9px; }
@@ -155,11 +156,11 @@
       .save-state { display: none; }
       .button { padding: 9px 10px; font-size: 12px; }
       .top-actions .button { padding: 8px; font-size: 11px; }
-      main { padding-top: 27px; }
+      main { padding-top: 20px; }
       .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-      .stat-card { min-height: 88px; padding: 13px; }
-      .stat-value { font-size: 23px; }
-      .stat-icon { width: 34px; height: 34px; }
+      .stat-card { min-height: 72px; padding: 10px; }
+      .stat-value { font-size: 21px; }
+      .stat-icon { width: 30px; height: 30px; }
       .filter-select { flex: 1; min-width: 130px; }
       .toolbar-right .button { flex: 1; }
       .form-grid { grid-template-columns: 1fr; }
