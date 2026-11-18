@@ -893,6 +893,22 @@
         }
       });
 
+      elements.body.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" || !event.target.hasAttribute("data-score")) return;
+        event.preventDefault();
+        const scoreInputs = [...elements.body.querySelectorAll('input[data-score]:not(:disabled)')];
+        const nextInput = scoreInputs[scoreInputs.indexOf(event.target) + 1];
+        if (!nextInput) return;
+        const nextEntryId = nextInput.closest("tr[data-id]").dataset.id;
+        const nextScoreIndex = nextInput.dataset.score;
+        event.target.blur();
+        requestAnimationFrame(() => {
+          const nextRow = [...elements.body.querySelectorAll("tr[data-id]")]
+            .find((row) => row.dataset.id === nextEntryId);
+          nextRow?.querySelector(`input[data-score="${nextScoreIndex}"]`)?.focus();
+        });
+      });
+
       elements.body.addEventListener("change", (event) => {
         const row = event.target.closest("tr[data-id]");
         if (!row) return;
